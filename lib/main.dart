@@ -50,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Send the image to the backend
     var request = http.MultipartRequest(
-        'POST', Uri.parse('http://154.208.61.25:5000/upload'));
+        'POST', Uri.parse('http://192.168.100.179:5000/upload'));
     request.files.add(await http.MultipartFile.fromPath('image', _image!.path));
 
     var response = await request.send();
