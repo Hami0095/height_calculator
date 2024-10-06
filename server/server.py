@@ -15,11 +15,17 @@ executor = concurrent.futures.ThreadPoolExecutor()
 def process_image(file_path):
     """Processes the image and calculates height in a separate thread."""
     try:
-        # Call the height calculation function from calculator.py
+        # Call the height calculation function and get the returned dictionary
         height_info = calculate_height(file_path)
+
+        # Return the result as-is
         return {
             'status': 'success',
-            'height_info': height_info
+            'height_info': {
+                'height_cm': height_info["height_cm"],
+                'height_ft': height_info["height_ft"],
+                'height_inch': height_info["height_inch"]
+            }
         }
     except Exception as e:
         return {

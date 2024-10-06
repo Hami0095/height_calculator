@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() {
   runApp(MyApp());
@@ -28,6 +29,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   File? _image;
   bool _isCalculating = false;
+  String? _heightResult; // To store the height result returned by the server
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -37,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Image picked: ${pickedFile.path}'); // Debugging line
       setState(() {
         _image = File(pickedFile.path);
+        _heightResult = null; // Reset the result when a new image is picked
       });
     } else {
       print('No image selected.'); // Debugging line
@@ -44,27 +47,66 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _calculateHeight() async {
+    if (_image == null) return; // Check if an image is selected
+
     setState(() {
       _isCalculating = true;
     });
 
-    // Send the image to the backend
-    var request = http.MultipartRequest(
-        'POST', Uri.parse('http://192.168.100.179:5000/upload'));
-    request.files.add(await http.MultipartFile.fromPath('image', _image!.path));
+    try {
+      // Send the image to the backend
+      var request = http.MultipartRequest(
+          'POST', Uri.parse('http://192.168.100.179:5000/upload'));
+      request.files
+          .add(await http.MultipartFile.fromPath('image', _image!.path));
 
-    var response = await request.send();
+      var response = await request.send();
+      if (response.statusCode == 200) {
+        // Get the response body as a string
+        final responseData = await http.Response.fromStream(response);
+        print('Server Response: ${responseData.body}'); // Log the raw response
 
-    if (response.statusCode == 200) {
-      debugPrint("Kia baat hai ge!");
-      // Process the response from the backend
-      // Example: final responseData = await response.stream.bytesToString();
-      // Handle the response as needed
+        // Parse the response body as JSON
+        final Map<String, dynamic> data = jsonDecode(responseData.body);
+
+        // Check the status and height_info in the response
+        if (data['status'] == 'success' && data.containsKey('height_info')) {
+          final heightInfo = data['height_info'];
+
+          double? heightCm = heightInfo['height_cm']?.toDouble();
+          int? feet = heightInfo['height_ft'];
+          double? inches = heightInfo['height_inch']?.toDouble();
+
+          if (heightCm != null && feet != null && inches != null) {
+            setState(() {
+              _heightResult =
+                  'Estimated Height: ${heightCm.toStringAsFixed(2)} cm (${feet} ft ${inches.toStringAsFixed(1)} in)';
+            });
+          } else {
+            setState(() {
+              _heightResult =
+                  'Failed to parse height details. Please try again.';
+            });
+          }
+        } else {
+          setState(() {
+            _heightResult = 'Failed to get height details. Please try again.';
+          });
+        }
+      } else {
+        setState(() {
+          _heightResult = 'Failed to calculate height. Try again.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _heightResult = 'Error: $e';
+      });
+    } finally {
+      setState(() {
+        _isCalculating = false;
+      });
     }
-
-    setState(() {
-      _isCalculating = false;
-    });
   }
 
   @override
@@ -92,6 +134,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Text('Calculate Height'),
               ),
               if (_isCalculating) CircularProgressIndicator(),
+              SizedBox(height: 20),
+              if (_heightResult != null)
+                Text(
+                  _heightResult!,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
             ],
           ],
         ),
