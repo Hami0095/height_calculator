@@ -1,16 +1,3 @@
-# height_calculator
+# Human Height Calculator
 
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+This project is a Flutter-Python project in which the extreme OpenCV concepts were applied to detect a human first and then, via REST APIs, the image is sent to the python server where MediaPipe is used for Human Pose detection and then head to toe per-inch ratio formula is used to calculate the exact height!
